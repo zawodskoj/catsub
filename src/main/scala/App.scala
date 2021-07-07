@@ -29,7 +29,7 @@ object App extends IOApp {
     .mapResponseRight(_.result)
 
   def sendMessage(chatId: Long, replyTo: Long, text: String) = basicRequest
-    .post(uri"$base/sendMessage?chat_id=$chatId&text=$text&reply_to=$replyTo&parse_mode=MarkdownV2")
+    .post(uri"$base/sendMessage?chat_id=$chatId&text=$text&reply_to_message_id=$replyTo&parse_mode=MarkdownV2")
     .response(asJson[SendMessageResponse])
     .mapResponseRight(_.result)
 
