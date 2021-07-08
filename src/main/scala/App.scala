@@ -4,9 +4,10 @@ import cats.effect.{IOApp, IO, ExitCode, Blocker}
 import cats.syntax.all._
 import models._
 import sttp.client3._
-import sttp.client3.httpclient.fs2.HttpClientFs2Backend
+import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 import sttp.client3.circe.asJson
 
+import java.net.http.HttpClient
 import java.time.{Instant, Duration => JavaDuration}
 import scala.concurrent.duration._
 import scala.math.Ordering.Implicits._
@@ -14,6 +15,8 @@ import scala.util.matching.Regex
 
 object App extends IOApp {
   val sixHours = JavaDuration.ofHours(6)
+  val ornulRate = 100
+  val ornulDelay = JavaDuration.ofMinutes(30)
 
   val token = sys.env.getOrElse("BOT_TOKEN", throw new Exception("no way"))
   val base = s"https://api.telegram.org/bot$token"
@@ -43,10 +46,17 @@ object App extends IOApp {
     substs: Vector[Subst]
   )
 
+  case class OrnulState(
+    count: Int,
+    last: Instant,
+    randv: Double
+  )
+
   case class Context(
     b: SttpBackend[IO, Any],
     offsetRef: Ref[IO, Long],
-    substsRef: Ref[IO, Map[Long, SubstCache]]
+    substsRef: Ref[IO, Map[Long, SubstCache]],
+    ornulRef: Ref[IO, Map[Long, OrnulState]]
   )
 
   case class SedFlags(
@@ -134,7 +144,27 @@ object App extends IOApp {
           case _ => IO.unit
         }
 
-      case _ => IO.unit
+      case _ => update.message.traverse { m =>
+        for {
+          ornul <- ornulRef.get
+          _ <- IO { println(s"ornul state: $ornul")}
+          _ <- ornul.get(m.chat.id) match {
+            case Some(ornulState) =>
+              val now = Instant.now
+
+              if (ornulState.count < ornulRate) {
+                ornulRef.update(_ + (m.chat.id -> ornulState.copy(count = ornulState.count + 1)))
+              } else if (JavaDuration.between(ornulState.last, now) > ornulDelay.plusSeconds((ornulState.randv * 600).toInt)) {
+                (sendMessage(m.chat.id, m.message_id, "орнул").send(b) >>= (x => IO { println(s"Ornul result: $x") })) >>
+                  ornulRef.update(_ + (m.chat.id -> OrnulState(0, now, Math.random())))
+              } else {
+                IO.unit
+              }
+            case None =>
+              ornulRef.update(_ + (m.chat.id -> OrnulState(1, Instant.MIN, Math.random())))
+          }
+        } yield()
+      }.void
     }
   }
 
@@ -142,6 +172,7 @@ object App extends IOApp {
     val now = Instant.now
 
     context.substsRef.update(_.filter { case (_, v) => JavaDuration.between(v.lastUpdated, now) < sixHours })
+    // context.ornulRef.update(_.filter { case (_, v) => JavaDuration.between(v.last, now) < sixHours })
   }
 
   def loop(implicit context: Context): IO[Unit] = {
@@ -158,12 +189,14 @@ object App extends IOApp {
   }
 
   override def run(args: List[String]): IO[ExitCode] = Blocker[IO].use { blocker =>
-    for {
-      backend <- HttpClientFs2Backend[IO](blocker)
-      offsetRef <- Ref.of[IO, Long](0)
-      substsRef <- Ref.of[IO, Map[Long, SubstCache]](Map.empty)
-      implicit0(context: Context) = Context(backend, offsetRef, substsRef)
-      _ <- loop.foreverM
-    } yield ExitCode.Success
+    AsyncHttpClientFs2Backend.resource[IO](blocker).use { backend =>
+      for {
+        offsetRef <- Ref.of[IO, Long](0)
+        substsRef <- Ref.of[IO, Map[Long, SubstCache]](Map.empty)
+        ornulRef <- Ref.of[IO, Map[Long, OrnulState]](Map.empty)
+        implicit0(context: Context) = Context(backend, offsetRef, substsRef, ornulRef)
+        _ <- loop.foreverM
+      } yield ExitCode.Success
+    }
   }
 }
