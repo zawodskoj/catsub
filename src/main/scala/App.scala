@@ -110,6 +110,15 @@ object App extends IOApp {
 
   def escape(s: String): String = escapeRx.replaceAllIn(s, "\\\\$1")
 
+  val tyanki = List(
+    "худенькую бледненькую...",
+    "девственную нецелованную...",
+    "как же хочется..."
+  )
+
+  // impure code omegalul
+  def pickTyanochka: String = tyanki((Math.random() * tyanki.size).toInt)
+
   def handle(update: Update)(implicit context: Context): IO[Unit] = {
     import context._
 
@@ -154,20 +163,28 @@ object App extends IOApp {
         for {
           ornul <- ornulRef.get
           _ <- IO { println(s"ornul state: $ornul")}
-          _ <- ornul.get(m.chat.id) match {
+          didOrnul <- ornul.get(m.chat.id) match {
             case Some(ornulState) =>
               val now = Instant.now
 
               if (ornulState.count < ornulRate) {
-                ornulRef.update(_ + (m.chat.id -> ornulState.copy(count = ornulState.count + 1)))
+                ornulRef.update(_ + (m.chat.id -> ornulState.copy(count = ornulState.count + 1))).as(false)
               } else if (JavaDuration.between(ornulState.last, now) > ornulDelay.plusSeconds((ornulState.randv * 600).toInt)) {
                 (sendMessage(m.chat.id, m.message_id, "орнул").send(b) >>= (x => IO { println(s"Ornul result: $x") })) >>
-                  ornulRef.update(_ + (m.chat.id -> OrnulState(0, now, Math.random())))
+                  ornulRef.update(_ + (m.chat.id -> OrnulState(0, now, Math.random()))).as(true)
               } else {
-                IO.unit
+                IO { false }
               }
             case None =>
-              ornulRef.update(_ + (m.chat.id -> OrnulState(1, Instant.MIN, Math.random())))
+              ornulRef.update(_ + (m.chat.id -> OrnulState(1, Instant.MIN, Math.random()))).as(false)
+          }
+          _ <- update.message.traverse { m =>
+            if (!didOrnul && m.text.exists(_.contains("чку бы"))) {
+              println("тяночку бы")
+              sendMessage(m.chat.id, m.message_id, escape(pickTyanochka)).send(b)
+            } else {
+              IO.unit
+            }
           }
         } yield()
       }.void
