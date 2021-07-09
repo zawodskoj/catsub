@@ -106,6 +106,10 @@ object App extends IOApp {
       case _ => None
     }
 
+  val escapeRx = "(?<!\\\\)([.])".r
+
+  def escape(s: String): String = escapeRx.replaceAllIn(s, "\\\\$1")
+
   def handle(update: Update)(implicit context: Context): IO[Unit] = {
     import context._
 
@@ -129,12 +133,14 @@ object App extends IOApp {
                   case Some(sed) =>
                     editMessage(message.chat.id, sed.substMessageId, result).send(b)
                   case _ =>
-                    sendMessage(message.chat.id, replyTo.message_id, result).sendAndUnwrap(b).flatMap { m =>
+                    sendMessage(message.chat.id, replyTo.message_id, escape(result)).sendAndUnwrap(b).flatMap { m =>
                       context.substsRef.update(_.updatedWith(message.chat.id) { v =>
                         val x = v.getOrElse(SubstCache(Instant.MIN, Vector.empty))
                         val newSubsts = x.substs.takeRight(4) :+ Subst(message.message_id, m.message_id)
                         Some(x.copy(lastUpdated = Instant.now, substs = newSubsts))
                       })
+                    } handleErrorWith {
+                      case e: Throwable => IO { println(s"Failed to send msg: $e") }
                     }
                 }
               } yield ()
