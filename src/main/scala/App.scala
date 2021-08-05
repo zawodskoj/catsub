@@ -7,7 +7,6 @@ import sttp.client3._
 import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 import sttp.client3.circe.asJson
 
-import java.net.http.HttpClient
 import java.time.{Instant, Duration => JavaDuration}
 import scala.concurrent.duration._
 import scala.math.Ordering.Implicits._
@@ -32,12 +31,12 @@ object App extends IOApp {
     .mapResponseRight(_.result)
 
   def sendMessage(chatId: Long, replyTo: Long, text: String) = basicRequest
-    .post(uri"$base/sendMessage?chat_id=$chatId&text=$text&reply_to_message_id=$replyTo&parse_mode=MarkdownV2")
+    .post(uri"$base/sendMessage?chat_id=$chatId&text=$text&reply_to_message_id=$replyTo")
     .response(asJson[SendMessageResponse])
     .mapResponseRight(_.result)
 
   def editMessage(chatId: Long, messageId: Long, text: String) = basicRequest
-    .post(uri"$base/editMessageText?chat_id=$chatId&text=$text&message_id=$messageId&parse_mode=MarkdownV2")
+    .post(uri"$base/editMessageText?chat_id=$chatId&text=$text&message_id=$messageId")
 
   case class Subst(origSedId: Long, substMessageId: Long)
 
@@ -106,9 +105,7 @@ object App extends IOApp {
       case _ => None
     }
 
-  val escapeRx = "(?<!\\\\)([.])".r
-
-  def escape(s: String): String = escapeRx.replaceAllIn(s, "\\\\$1")
+  def escape(s: String): String = s // no way
 
   val tyanki = List(
     "худенькую бледненькую...",
