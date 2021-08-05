@@ -78,15 +78,12 @@ object App extends IOApp {
 
           val r = {
             val rstr = rgx.replace("\u0000", "\\/")
-            var flagStr = ""
+            var flagStr = "u"
 
             if (flags.i)
               flagStr += "i"
 
-            if (flagStr.isEmpty)
-              rstr
-            else
-              s"(?$flagStr)$rstr"
+            s"(?$flagStr)$rstr"
           }.r
 
           Some(SedCommand(r, subst, flags))
