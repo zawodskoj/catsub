@@ -78,7 +78,7 @@ object sedFunction {
         commandMessage <- update.message.orElse(update.edited_message)
         chatId = commandMessage.chat.id
         replyToMessage <- commandMessage.reply_to_message
-        (commandText, replyToText) <- (commandMessage.text, replyToMessage.text).tupled
+        (commandText, replyToText) <- (commandMessage.textOrCaption, replyToMessage.textOrCaption).tupled
         decodedSed <- tryDecodeSedCommand(commandText)
         resultText = decodedSed.foldLeft(replyToText)(applySed)
       } yield cacheRef.get
