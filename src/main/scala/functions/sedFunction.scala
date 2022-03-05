@@ -19,7 +19,8 @@ object sedFunction {
 
   case class SedFlags(
     g: Boolean,
-    i: Boolean
+    i: Boolean,
+    d: Boolean
   )
 
   case class SedCommand(rgx: Regex, subst: String, flags: SedFlags)
@@ -32,7 +33,8 @@ object sedFunction {
 
           val flags = SedFlags(
             g = flagsStr.contains("g"),
-            i = flagsStr.contains("i")
+            i = flagsStr.contains("i"),
+            d = flagsStr.contains("d")
           )
 
           val r = {
@@ -54,7 +56,7 @@ object sedFunction {
           val subst = substWSpaces.stripTrailing
           val r = rgx.replace("\u0000", "\\/").r
 
-          Some(SedCommand(r, subst, SedFlags(g = false, i = false)))
+          Some(SedCommand(r, subst, SedFlags(g = false, i = false, d = false)))
         } catch {
           case _: Throwable => None
         }
@@ -83,15 +85,22 @@ object sedFunction {
         .map(_.get(chatId).flatMap(_.substs.find(_.origSedId == commandMessage.message_id)))
         .flatMap {
           case Some(sed) => editMessage(chatId, sed.substMessageId, resultText)
-          case None => for {
-            message <- sendMessage(chatId, replyToMessage.message_id, resultText)
-            _ <- cacheRef.update(_.updatedWith(chatId) { v =>
-              val entry = v.getOrElse(SubstCache(Instant.MIN, Vector.empty))
-              val newSubsts = entry.substs.takeRight(4) :+ Subst(commandMessage.message_id, message.message_id)
+          case None =>
+            if (decodedSed.exists(_.flags.d))
+              for {
+                _ <- sendMessage(chatId, replyToMessage.message_id, resultText)
+                _ <- deleteMessage(chatId, commandMessage.message_id)
+              } yield ()
+            else
+              for {
+                message <- sendMessage(chatId, replyToMessage.message_id, resultText)
+                _ <- cacheRef.update(_.updatedWith(chatId) { v =>
+                  val entry = v.getOrElse(SubstCache(Instant.MIN, Vector.empty))
+                  val newSubsts = entry.substs.takeRight(4) :+ Subst(commandMessage.message_id, message.message_id)
 
-              Some(entry.copy(lastUpdated = Instant.now, substs = newSubsts))
-            })
-          } yield ()
+                  Some(entry.copy(lastUpdated = Instant.now, substs = newSubsts))
+                })
+              } yield ()
         }
         .as(true)
 

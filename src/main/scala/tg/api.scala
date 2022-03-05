@@ -39,4 +39,9 @@ object api {
     .post(uri"$base/editMessageText?chat_id=$chatId&text=$text&message_id=$messageId")
     .sendAndUnwrap(b)
     .void
+
+  def deleteMessage(chatId: Long, messageId: Long)(implicit b: SttpBackend[IO, Any]): IO[Unit] = basicRequest
+    .post(uri"$base/deleteMessage?chat_id=$chatId&message_id=$messageId")
+    .sendAndUnwrap(b)
+    .void
 }
