@@ -88,8 +88,8 @@ object sedFunction {
           case None =>
             if (decodedSed.exists(_.flags.d))
               for {
-                _ <- sendMessage(chatId, replyToMessage.message_id, resultText)
                 _ <- deleteMessage(chatId, commandMessage.message_id)
+                _ <- sendMessage(chatId, replyToMessage.message_id, resultText)
               } yield ()
             else
               for {
