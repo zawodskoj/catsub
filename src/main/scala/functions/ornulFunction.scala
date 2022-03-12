@@ -74,7 +74,7 @@ object ornulFunction {
             secRef.update(_ + (chatId -> state))
 
           if (m.text.orElse(m.caption).exists(ornulRegex.matches)) {
-            primRef.get.map(_.get(chatId)).flatMap {
+            secRef.get.map(_.get(chatId)).flatMap {
               case Some(chatState) =>
                 val msgTime = Instant.ofEpochSecond(m.date)
 
