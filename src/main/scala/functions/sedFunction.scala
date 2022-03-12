@@ -39,7 +39,7 @@ object sedFunction {
 
           val r = {
             val rstr = rgx.replace("\u0000", "\\/")
-            var flagStr = "u"
+            var flagStr = "uU"
 
             if (flags.i)
               flagStr += "i"
