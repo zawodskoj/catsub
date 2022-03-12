@@ -11,10 +11,11 @@ import functions._
 
 object App extends IOApp {
   val ornulRate = 100
+  val ornulTooRate = 20
   val ornulDelay: JavaDuration = JavaDuration.ofMinutes(30)
 
   def mkFn(implicit b: SttpBackend[IO, Any]): Resource[IO, BotFunction] =
-    (sedFunction.resource, tyanochkuFunction.resource, ornulFunction.resource(ornulRate, ornulDelay))
+    (sedFunction.resource, tyanochkuFunction.resource, ornulFunction.resource(ornulRate, ornulDelay, ornulTooRate))
       .mapN { (sed, tyan, ornul) => sed ++ tyan ++ ornul }
 
   def loop(offsetRef: Ref[IO, Long], fn: BotFunction)(implicit b: SttpBackend[IO, Any]): IO[Unit] =
