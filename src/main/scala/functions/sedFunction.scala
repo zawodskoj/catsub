@@ -39,7 +39,7 @@ object sedFunction {
 
           val r = {
             val rstr = rgx.replace("\u0000", "\\/")
-            var flagStr = "uU"
+            var flagStr = "U"
 
             if (flags.i)
               flagStr += "i"
@@ -54,7 +54,7 @@ object sedFunction {
       case s"s/$rgx/$substWSpaces" =>
         try {
           val subst = substWSpaces.stripTrailing
-          val r = rgx.replace("\u0000", "\\/").r
+          val r = ("(?U)" + rgx.replace("\u0000", "\\/")).r
 
           Some(SedCommand(r, subst, SedFlags(g = false, i = false, d = false)))
         } catch {
