@@ -89,7 +89,7 @@ object sedFunction {
             if (decodedSed.exists(_.flags.d))
               for {
                 _ <- deleteMessage(chatId, commandMessage.message_id)
-                _ <- sendMessage(chatId, replyToMessage.message_id, resultText)
+                _ <- sendMessageAndForget(chatId, replyToMessage.message_id, resultText)
               } yield ()
             else
               for {
@@ -102,6 +102,7 @@ object sedFunction {
                 })
               } yield ()
         }
+        .attempt
         .as(true)
 
       maybeAction.getOrElse(IO.pure(false))

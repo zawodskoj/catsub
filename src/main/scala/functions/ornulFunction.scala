@@ -47,7 +47,7 @@ object ornulFunction {
                 update(chatState.copy(count = chatState.count + 1)).as(false)
               } else if (Duration.between(chatState.last, msgTime) > delay) {
                 for {
-                  _ <- sendMessage(chatId, m.message_id, "орнул")
+                  _ <- sendMessageAndForget(chatId, m.message_id, "орнул")
                   _ <- update(OrnulState(0, msgTime, Math.random()))
                 } yield true
               } else {
@@ -82,7 +82,7 @@ object ornulFunction {
                   update(chatState.copy(count = chatState.count + 1)).as(false)
                 } else {
                   for {
-                    _ <- sendMessage(chatId, m.message_id, ornuls((Math.random() * ornuls.size).toInt))
+                    _ <- sendMessageAndForget(chatId, m.message_id, ornuls((Math.random() * ornuls.size).toInt))
                     _ <- update(OrnulState(0, msgTime, Math.random()))
                   } yield true
                 }
