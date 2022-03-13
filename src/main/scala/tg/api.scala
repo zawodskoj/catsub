@@ -37,8 +37,6 @@ object api {
 
   def sendMessageAndForget(chatId: Long, replyTo: Long, text: String)(implicit b: SttpBackend[IO, Any]): IO[Unit] = basicRequest
     .post(uri"$base/sendMessage?chat_id=$chatId&text=$text&reply_to_message_id=$replyTo")
-    .response(asJson[SendMessageResponse])
-    .mapResponseRight(_.result)
     .send(b)
     .void
 
