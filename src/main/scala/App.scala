@@ -19,13 +19,17 @@ object App extends IOApp {
     (sedFunction.resource, tyanochkuFunction.resource, ornulFunction.resource(ornulRate, ornulDelay))
       .mapN { (sed, tyan, ornul) => sed ++ tyan ++ ornul }
 
-  def filterObsoleteMessages(x: models.Update): Boolean = ignoreRewindFlag match {
-    case true => (for {
-      message <- x.message.orElse(x.edited_message)
-      isObsolete = message.date < deployDate
-    } yield isObsolete).getOrElse(false)
-    case _ => false
-  }
+  def filterObsoleteMessages(x: models.Update): Boolean =
+    if (ignoreRewindFlag) {
+      val result = for {
+        message <- x.message.orElse(x.edited_message)
+        isObsolete = message.date < deployDate
+      } yield isObsolete
+
+      result.getOrElse(false)
+    } else {
+      false
+    }
 
   def loop(offsetRef: Ref[IO, Long], fn: BotFunction)(implicit b: SttpBackend[IO, Any]): IO[Unit] =
     for {
