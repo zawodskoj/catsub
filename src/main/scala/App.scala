@@ -12,17 +12,28 @@ import functions._
 object App extends IOApp {
   val ornulRate = 100
   val ornulDelay: JavaDuration = JavaDuration.ofMinutes(30)
+  val ignoreRewindFlag: Boolean = sys.env.getOrElse("BOT_NO_REWIND", "TRUE").toBoolean
+  val deployDate: Long = System.currentTimeMillis() / 1000L
 
   def mkFn(implicit b: SttpBackend[IO, Any]): Resource[IO, BotFunction] =
     (sedFunction.resource, tyanochkuFunction.resource, ornulFunction.resource(ornulRate, ornulDelay))
       .mapN { (sed, tyan, ornul) => sed ++ tyan ++ ornul }
 
+  def filterObsoleteMessages(x: models.Update): Boolean = ignoreRewindFlag match {
+    case true => (for {
+      message <- x.message.orElse(x.edited_message)
+      isObsolete = message.date < deployDate
+    } yield isObsolete).getOrElse(false)
+    case _ => false
+  }
+
   def loop(offsetRef: Ref[IO, Long], fn: BotFunction)(implicit b: SttpBackend[IO, Any]): IO[Unit] =
     for {
       offset <- offsetRef.get
       updates <- getUpdates(offset)
-      _ <- updates.traverse_(fn.handleUpdate)
-      _ <- updates.maxByOption(_.update_id).map(_.update_id + 1).traverse(offsetRef.set)
+      validUpdates = updates.filter(filterObsoleteMessages)
+      _ <- validUpdates.traverse_(fn.handleUpdate)
+      _ <- validUpdates.maxByOption(_.update_id).map(_.update_id + 1).traverse(offsetRef.set)
       _ <- IO.sleep(200.millis)
     } yield ()
 
