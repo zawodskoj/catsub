@@ -4,7 +4,7 @@ import cats.syntax.all._
 import sttp.client3._
 import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 
-import java.time.{Duration => JavaDuration}
+import java.time.{Instant, Duration => JavaDuration}
 import scala.concurrent.duration._
 import tg.api._
 import functions._
@@ -13,16 +13,27 @@ object App extends IOApp {
   val ornulRate = 100
   val ornulTooRate = 20
   val ornulDelay: JavaDuration = JavaDuration.ofMinutes(30)
+  
+  val ignoreRewindFlag: Boolean = sys.env.getOrElse("BOT_NO_REWIND", "true").toLowerCase match {
+    case "yes" | "true" | "y" | "t" | "1" => true
+    case _ => false
+  }
+  
+  val deployDate: Long = Instant.now.getEpochSecond
 
   def mkFn(implicit b: SttpBackend[IO, Any]): Resource[IO, BotFunction] =
     (sedFunction.resource, tyanochkuFunction.resource, ornulFunction.resource(ornulRate, ornulDelay, ornulTooRate))
       .mapN { (sed, tyan, ornul) => sed ++ tyan ++ ornul }
 
+  def isUpdateFreshEnough(x: models.Update): Boolean =
+    x.message.orElse(x.edited_message).map(_.date < deployDate).getOrElse(false)
+  
   def loop(offsetRef: Ref[IO, Long], fn: BotFunction)(implicit b: SttpBackend[IO, Any]): IO[Unit] =
     for {
       offset <- offsetRef.get
       updates <- getUpdates(offset)
-      _ <- updates.traverse_(fn.handleUpdate)
+      validUpdates = if (ignoreRewindFlag) updates.filter(isUpdateFreshEnough) else updates
+      _ <- validUpdates.traverse_(fn.handleUpdate)
       _ <- updates.maxByOption(_.update_id).map(_.update_id + 1).traverse(offsetRef.set)
       _ <- IO.sleep(200.millis)
     } yield ()
