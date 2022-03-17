@@ -26,7 +26,7 @@ object App extends IOApp {
       .mapN { (sed, tyan, ornul) => sed ++ tyan ++ ornul }
 
   def isUpdateFreshEnough(x: models.Update): Boolean =
-    x.message.orElse(x.edited_message).map(_.date < deployDate).getOrElse(false)
+    x.message.orElse(x.edited_message).exists(_.date > deployDate)
   
   def loop(offsetRef: Ref[IO, Long], fn: BotFunction)(implicit b: SttpBackend[IO, Any]): IO[Unit] =
     for {
