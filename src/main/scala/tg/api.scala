@@ -34,19 +34,35 @@ object api {
     .response(asJson[SendMessageResponse])
     .mapResponseRight(_.result)
     .sendAndUnwrap(b)
+    .handleErrorWith { e =>
+      println(s"Failed to send message $text")
+      IO.raiseError(e)
+    }
 
   def sendMessageAndForget(chatId: Long, replyTo: Long, text: String)(implicit b: SttpBackend[IO, Any]): IO[Unit] = basicRequest
     .post(uri"$base/sendMessage?chat_id=$chatId&text=$text&reply_to_message_id=$replyTo")
     .send(b)
     .void
+    .handleErrorWith { e =>
+      println(s"Failed to send message $text (in `forget` mode)")
+      IO.raiseError(e)
+    }
 
   def editMessage(chatId: Long, messageId: Long, text: String)(implicit b: SttpBackend[IO, Any]): IO[Unit] = basicRequest
     .post(uri"$base/editMessageText?chat_id=$chatId&text=$text&message_id=$messageId")
     .send(b)
     .void
+    .handleErrorWith { e =>
+      println(s"Failed to edit message $text")
+      IO.raiseError(e)
+    }
 
   def deleteMessage(chatId: Long, messageId: Long)(implicit b: SttpBackend[IO, Any]): IO[Unit] = basicRequest
     .post(uri"$base/deleteMessage?chat_id=$chatId&message_id=$messageId")
     .send(b)
     .void
+    .handleErrorWith { e =>
+      println(s"Failed to delete message $messageId")
+      IO.raiseError(e)
+    }
 }

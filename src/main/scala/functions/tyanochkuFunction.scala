@@ -18,7 +18,7 @@ object tyanochkuFunction {
 
   def resource(implicit b: SttpBackend[IO, Any]): Resource[IO, BotFunction] = Resource.pure[IO, BotFunction] { update =>
     update.message.filter(_.textOrCaption.exists(_.contains("чку бы"))).traverse { m =>
-      sendMessage(m.chat.id, m.message_id, pickTyanochka)
+      sendMessageAndForget(m.chat.id, m.message_id, pickTyanochka)
     }.map(_.nonEmpty)
   }
 }
