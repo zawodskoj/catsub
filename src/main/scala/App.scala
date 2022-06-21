@@ -22,8 +22,8 @@ object App extends IOApp {
   val deployDate: Long = Instant.now.getEpochSecond
 
   def mkFn(implicit b: SttpBackend[IO, Any]): Resource[IO, BotFunction] =
-    (sedFunction.resource, tyanochkuFunction.resource, ornulFunction.resource(ornulRate, ornulDelay, ornulTooRate))
-      .mapN { (sed, tyan, ornul) => sed ++ tyan ++ ornul }
+    (antiKpopFunction.resource, sedFunction.resource, tyanochkuFunction.resource, ornulFunction.resource(ornulRate, ornulDelay, ornulTooRate))
+      .mapN { (antiKpop, sed, tyan, ornul) => antiKpop ++ sed ++ tyan ++ ornul }
 
   def isUpdateFreshEnough(x: models.Update): Boolean =
     x.message.orElse(x.edited_message).exists(_.date > deployDate)
