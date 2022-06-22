@@ -34,7 +34,6 @@ object App extends IOApp {
       updates <- getUpdates(offset)
       validUpdates = if (ignoreRewindFlag) updates.filter(isUpdateFreshEnough) else updates
       _ <- validUpdates.traverse_(fn.handleUpdate)
-      _ <- validUpdates.traverse_(u => if (isUpdateFreshEnough(u)) fn.handleUpdate(u) else IO.unit)
       _ <- updates.maxByOption(_.update_id).map(_.update_id + 1).traverse(offsetRef.set)
       _ <- IO.sleep(200.millis)
     } yield ()
