@@ -13,7 +13,7 @@ object App extends IOApp {
   val ornulRate = 100
   val ornulTooRate = 20
   val ornulDelay: JavaDuration = JavaDuration.ofMinutes(30)
-  
+
   val ignoreRewindFlag: Boolean = sys.env.getOrElse("BOT_NO_REWIND", "true").toLowerCase match {
     case "yes" | "true" | "y" | "t" | "1" => true
     case _ => false
@@ -22,8 +22,8 @@ object App extends IOApp {
   val deployDate: Long = Instant.now.getEpochSecond
 
   def mkFn(implicit b: SttpBackend[IO, Any]): Resource[IO, BotFunction] =
-    (antiKpopFunction.resource, sedFunction.resource, tyanochkuFunction.resource, ornulFunction.resource(ornulRate, ornulDelay, ornulTooRate))
-      .mapN { (antiKpop, sed, tyan, ornul) => antiKpop ++ sed ++ tyan ++ ornul }
+    (fekFunction.resource, antiKpopFunction.resource, sedFunction.resource, tyanochkuFunction.resource, ornulFunction.resource(ornulRate, ornulDelay, ornulTooRate))
+      .mapN { (fek, antiKpop, sed, tyan, ornul) => fek ++ antiKpop ++ sed ++ tyan ++ ornul }
 
   def isUpdateFreshEnough(x: models.Update): Boolean =
     x.message.orElse(x.edited_message).exists(_.date > deployDate)
