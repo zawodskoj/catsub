@@ -14,8 +14,9 @@ object fekFunction {
     val hasPhoto = update.message.flatMap(_.photo).nonEmpty
 
     val isAlex = update.message.exists(m => alexId.contains(m.from.id))
-    val userMultiplier = if (isAlex) 1 else 0.1
-    val probability = ((if (hasUrl) 0.9 else 0) + (if (hasPhoto) 0.3 else 0)) * userMultiplier
+    val ambient = if (isAlex) 0.1 else 0
+    val userMultiplier = if (isAlex) 0.7 else 0.3
+    val probability = ((if (hasUrl) 0.9 else 0) + (if (hasPhoto) 0.3 else 0)) * userMultiplier + ambient
 
     if (Math.random() > (1 - probability)) {
       update.message.traverse { m =>
