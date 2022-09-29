@@ -28,7 +28,7 @@ object App extends IOApp {
       sedFunction.resource,
       tyanochkuFunction.resource,
       ornulFunction.resource(ornulRate, ornulDelay, ornulTooRate)
-    ).sequence.map(_.reduceLeft { case (x, y) => x ++ y })
+    ).sequence.map(_.reduceLeft[BotFunction] { case (x, y) => x ++ y })
   }
 
   def isUpdateFreshEnough(x: models.Update): Boolean =
