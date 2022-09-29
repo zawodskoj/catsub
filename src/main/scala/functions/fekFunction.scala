@@ -17,7 +17,7 @@ object fekFunction {
     val isAlex = update.message.exists(m => alexId.contains(m.from.id) && alexChatId.forall(_ == m.chat.id))
     val ambient = if (isAlex) 0.1 else 0
     val userMultiplier = if (isAlex) 0.7 else 0.3
-    val probability = ((if (hasUrl) 0.9 else 0) + (if (hasPhoto) 0.3 else 0)) * userMultiplier + ambient
+    val probability = ((if (hasUrl) 0.7 else 0) + (if (hasPhoto) 0.2 else 0)) * userMultiplier + ambient
 
     if (Math.random() > (1 - probability)) {
       update.message.traverse { m =>
