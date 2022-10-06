@@ -9,6 +9,7 @@ import tg.api._
 object fekFunction {
   val alexId: Option[Long] = sys.env.get("ALEX_ID").flatMap(_.toLongOption)
   val alexChatId: Option[Long] = sys.env.get("ALEX_CHAT_ID").flatMap(_.toLongOption)
+  val isEnabled: Boolean = sys.env.get("FEK_ENABLED").flatMap(_.toBooleanOption).getOrElse(true)
 
   def resource(implicit b: SttpBackend[IO, Any]): Resource[IO, BotFunction] = Resource.pure[IO, BotFunction] { update =>
     val hasUrl = update.message.toList.flatMap(_.entities.getOrElse(Nil)).exists(x => x.`type` == "url")
@@ -29,7 +30,7 @@ object fekFunction {
 
     val probability = rawProbability * userMultiplier + ambient
 
-    if (Math.random() > (1 - probability)) {
+    if (isEnabled && (Math.random() > (1 - probability))) {
       update.message.traverse { m =>
         sendMessageAndForget(m.chat.id, m.message_id, "фек")
       }.as(true)
