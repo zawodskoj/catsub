@@ -6,22 +6,19 @@ import models._
 import sttp.client3._
 import sttp.client3.ziojson._
 
-object api {
+object api:
   val token: String = sys.env.getOrElse("BOT_TOKEN", throw new Exception("no way"))
   val base = s"https://api.telegram.org/bot$token"
 
-  trait AsException[-E] {
+  trait AsException[-E]:
     def exception(value: E): Exception
-  }
-  object AsException {
+  object AsException:
     implicit val exceptionAsException: AsException[Exception] = x => x
     implicit val stringAsException: AsException[String] = x => new Exception(x)
-  }
 
-  implicit class RequestOps[T, R, E](r: RequestT[Identity, Either[E, T], R]) {
+  implicit class RequestOps[T, R, E](r: RequestT[Identity, Either[E, T], R]):
     def sendAndUnwrap(b: SttpBackend[IO, R])(implicit asException: AsException[E]): IO[T] =
       r.send(b).flatMap(_.body.leftMap(asException.exception).liftTo[IO])
-  }
 
   def getUpdates(offset: Long)(implicit b: SttpBackend[IO, Any]): IO[Vector[Update]] = basicRequest
     .get(uri"$base/getUpdates?offset=$offset")
@@ -65,4 +62,3 @@ object api {
       println(s"Failed to delete message $messageId")
       IO.raiseError(e)
     }
-}
