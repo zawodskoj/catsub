@@ -6,7 +6,7 @@ import sttp.client3.SttpBackend
 import tg.api.deleteMessage
 
 object antiKpopFunction {
-  def resource(implicit b: SttpBackend[IO, Any]): Resource[IO, BotFunction] = Resource.pure[IO, BotFunction] {
+  def resource(using b: SttpBackend[IO, Any]): Resource[IO, BotFunction] = Resource.pure[IO, BotFunction] {
     { update =>
       update.message.flatMap(_.sticker).flatMap(_.set_name).traverse { m =>
         if (m === "runrunrun_by_stickersthiefbot") {

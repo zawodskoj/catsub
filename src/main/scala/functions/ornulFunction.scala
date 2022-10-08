@@ -1,7 +1,6 @@
 package functions
 
-import cats.effect.concurrent.Ref
-import cats.effect.{IO, Resource}
+import cats.effect.{IO, Resource, Ref}
 import cats.syntax.all._
 import sttp.client3.SttpBackend
 
@@ -26,7 +25,7 @@ object ornulFunction {
 
   private val ornulRegex: Regex = "^орнул|^ор$|\\sорнул".r
 
-  def resource(ornulRate: Int, ornulDelay: Duration, ornulTooRate: Int)(implicit b: SttpBackend[IO, Any]): Resource[IO, BotFunction] = Resource.eval {
+  def resource(ornulRate: Int, ornulDelay: Duration, ornulTooRate: Int)(using b: SttpBackend[IO, Any]): Resource[IO, BotFunction] = Resource.eval {
     for {
       primRef <- Ref.of[IO, Map[Long, OrnulState]](Map.empty)
       secRef <- Ref.of[IO, Map[Long, OrnulState]](Map.empty)

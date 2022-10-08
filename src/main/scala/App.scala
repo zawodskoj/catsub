@@ -1,5 +1,4 @@
-import cats.effect.concurrent.Ref
-import cats.effect.{Blocker, Resource, ExitCode, IOApp, IO}
+import cats.effect.{Resource, ExitCode, IOApp, IO, Ref}
 import cats.syntax.all._
 import sttp.client3._
 import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
@@ -21,20 +20,20 @@ object App extends IOApp {
   
   val deployDate: Long = Instant.now.getEpochSecond
 
-  def mkFn(implicit b: SttpBackend[IO, Any]): Resource[IO, BotFunction] = {
+  def mkFn(using b: SttpBackend[IO, Any]): Resource[IO, BotFunction] = {
     List(
       fekFunction.resource,
       antiKpopFunction.resource,
       sedFunction.resource,
       tyanochkuFunction.resource,
       ornulFunction.resource(ornulRate, ornulDelay, ornulTooRate)
-    ).sequence.map(_.reduceLeft[BotFunction] { case (x, y) => x ++ y })
+    ).sequence.map(_.reduceLeft { case (x, y) => x ++ y })
   }
 
   def isUpdateFreshEnough(x: models.Update): Boolean =
     x.message.orElse(x.edited_message).exists(_.date > deployDate)
   
-  def loop(offsetRef: Ref[IO, Long], fn: BotFunction)(implicit b: SttpBackend[IO, Any]): IO[Unit] =
+  def loop(offsetRef: Ref[IO, Long], fn: BotFunction)(using b: SttpBackend[IO, Any]): IO[Unit] =
     for {
       offset <- offsetRef.get
       updates <- getUpdates(offset)
@@ -46,8 +45,7 @@ object App extends IOApp {
 
   override def run(args: List[String]): IO[ExitCode] = {
     val res = for {
-      blocker <- Blocker[IO]
-      implicit0(b: SttpBackend[IO, Any]) <- AsyncHttpClientFs2Backend.resource[IO](blocker)
+      given SttpBackend[IO, Any] <- AsyncHttpClientFs2Backend.resource[IO]()
       fn <- mkFn
       _ <- Resource.eval {
         Ref.of[IO, Long](0).flatMap(offsetRef => loop(offsetRef, fn).foreverM)

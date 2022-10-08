@@ -16,7 +16,7 @@ object tyanochkuFunction {
   // impure code omegalul
   def pickTyanochka: String = tyanki((Math.random() * tyanki.size).toInt)
 
-  def resource(implicit b: SttpBackend[IO, Any]): Resource[IO, BotFunction] = Resource.pure[IO, BotFunction] { update =>
+  def resource(using b: SttpBackend[IO, Any]): Resource[IO, BotFunction] = Resource.pure[IO, BotFunction] { update =>
     update.message.filter(_.textOrCaption.exists(_.contains("чку бы"))).traverse { m =>
       sendMessageAndForget(m.chat.id, m.message_id, pickTyanochka)
     }.map(_.nonEmpty)

@@ -1,7 +1,6 @@
 package functions
 
-import cats.effect.concurrent.Ref
-import cats.effect.{IO, Resource}
+import cats.effect.{IO, Resource, Ref}
 import cats.syntax.all._
 import sttp.client3.SttpBackend
 
@@ -70,7 +69,7 @@ object sedFunction {
       sed.rgx.replaceFirstIn(msg, sed.subst)
     }
 
-  def resource(implicit b: SttpBackend[IO, Any]): Resource[IO, BotFunction] = Resource.eval {
+  def resource(using b: SttpBackend[IO, Any]): Resource[IO, BotFunction] = Resource.eval {
     for {
       cacheRef <- Ref.of[IO, Map[Long, SubstCache]](Map.empty)
     } yield { update =>

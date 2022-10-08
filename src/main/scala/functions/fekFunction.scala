@@ -11,7 +11,7 @@ object fekFunction {
   val alexChatId: Option[Long] = sys.env.get("ALEX_CHAT_ID").flatMap(_.toLongOption)
   val isEnabled: Boolean = sys.env.get("FEK_ENABLED").flatMap(_.toBooleanOption).getOrElse(true)
 
-  def resource(implicit b: SttpBackend[IO, Any]): Resource[IO, BotFunction] = Resource.pure[IO, BotFunction] { update =>
+  def resource(using b: SttpBackend[IO, Any]): Resource[IO, BotFunction] = Resource.pure[IO, BotFunction] { update =>
     val hasUrl = update.message.toList.flatMap(_.entities.getOrElse(Nil)).exists(x => x.`type` == "url")
     val hasPhoto = update.message.flatMap(_.photo).nonEmpty
     val hasNews = update.message.flatMap(_.text).getOrElse("").contains("⚡️")

@@ -1,11 +1,21 @@
-import derevo.derive
-import derevo.circe._
-import io.circe.Json
+import zio.json.*
+import zio.json.ast.*
 
 package object models {
-  @derive(codec) case class Chat(id: Long)
-  @derive(codec) case class Sticker(set_name: Option[String])
-  @derive(codec) case class Message(
+
+  case class Chat(id: Long)
+
+  object Chat {
+    given JsonCodec[Chat] = DeriveJsonCodec.gen
+  }
+
+  case class Sticker(set_name: Option[String])
+
+  object Sticker {
+    given JsonCodec[Sticker] = DeriveJsonCodec.gen
+  }
+
+  case class Message(
     message_id: Long,
     date: Long,
     chat: Chat,
@@ -19,8 +29,31 @@ package object models {
   ) {
     def textOrCaption: Option[String] = text.orElse(caption)
   }
-  @derive(codec) case class Update(update_id: Long, message: Option[Message], edited_message: Option[Message])
-  @derive(codec) case class GetUpdatesResponse(result: Vector[Update])
-  @derive(codec) case class SendMessageResponse(result: Message)
-  @derive(codec) case class MessageEntity(`type`: String)
+  object Message {
+    given JsonCodec[Message] = DeriveJsonCodec.gen
+  }
+
+  case class Update(update_id: Long, message: Option[Message], edited_message: Option[Message])
+
+  object Update {
+    given JsonCodec[Update] = DeriveJsonCodec.gen
+  }
+
+  case class GetUpdatesResponse(result: Vector[Update])
+
+  object GetUpdatesResponse {
+    given JsonCodec[GetUpdatesResponse] = DeriveJsonCodec.gen
+  }
+
+  case class SendMessageResponse(result: Message)
+
+  object SendMessageResponse {
+    given JsonCodec[SendMessageResponse] = DeriveJsonCodec.gen
+  }
+
+  case class MessageEntity(`type`: String)
+
+  object MessageEntity {
+    given JsonCodec[MessageEntity] = DeriveJsonCodec.gen
+  }
 }

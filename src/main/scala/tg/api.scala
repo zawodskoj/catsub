@@ -4,7 +4,7 @@ import cats.effect.IO
 import cats.syntax.all._
 import models._
 import sttp.client3._
-import sttp.client3.circe._
+import sttp.client3.ziojson._
 
 object api {
   val token: String = sys.env.getOrElse("BOT_TOKEN", throw new Exception("no way"))
